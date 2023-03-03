@@ -1,0 +1,52 @@
+{
+  hash: '15fb9a8b04a09126e0225ebcb610da10c134165cc2fa2e60f79e07a01b164893',
+  ver: 1,
+  vin_sz: 3,
+  vout_sz: 1,
+  size: 492,
+  weight: 993,
+  fee: 744,
+  relayed_by: '0.0.0.0',
+  lock_time: 0,
+  tx_index: 5182010170802419,
+  double_spend: false,
+  time: 1677863517,
+  block_index: null,
+  block_height: null,
+  inputs: [
+    {
+      sequence: 4294967295,
+      witness: '02483045022100931a5662563c93850468b1e0e2bc2ba4f59edda740eb61acf3bdc39a2915441e022004e5d09343c2f8922d024f3d8a01e9ad845cf205a92cee398241142df3ddf22501210351f993c80fdb8f2eaf9caa53eca619407cdc92be58cee057b785ebc5e7ece3ef',
+      script: '',
+      index: 0,
+      prev_out: [Object]
+    },
+    {
+      sequence: 4294967295,
+      witness: '02473044022002d8c7ac137a9102c74b9691fc05670169103660100227b68992e51fc84c8d2f022016e81bc6a9196f21afac6204b270b9f8ea1ee9a5c588db3930f40d5b91a10f8601210351f993c80fdb8f2eaf9caa53eca619407cdc92be58cee057b785ebc5e7ece3ef',
+      script: '',
+      index: 1,
+      prev_out: [Object]
+    },
+    {
+      sequence: 4294967295,
+      witness: '02483045022100e669ac279c4dffd4f5598daca7cef69c8163da5645cb5f0ddded7551338f058b02203665fb706254743c12a9f46ad80a182d058cdfc5e8aa797e8c915b4aef846b57012103de04f119c869dfe54072550af4ba3a5cab7d6e87cc0e9d5a8b221fe381515c7e',
+      script: '',
+      index: 2,
+      prev_out: [Object]
+    }
+  ],
+  out: [
+    {
+      type: 0,
+      spent: false,
+      value: 2083397,
+      spending_outpoints: [],
+      n: 0,
+      tx_index: 5182010170802419,
+      script: '76a914560eb66227f852719037e72ae562712f9a80f8cd88ac',
+      addr: '18r2jjegEvT1SC6H4wGhJqZmvPLMZ8kkU1'
+    }
+  ],
+  rbf: true
+}
