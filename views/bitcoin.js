@@ -7,7 +7,8 @@ let mouse = {
     y: undefined
 };
 
-
+const circles = new Map();
+const bitcoinMempool = new Map();
 
 const colorArray = [
     '#e967fd',
@@ -27,6 +28,9 @@ window.addEventListener('resize', () =>{
     canvas.height = window.innerHeight;
     init();
 });
+
+
+
 function Circle(x, y, dx , dy, radius, data){
     this.data = data;
     this.x = x;
@@ -51,6 +55,7 @@ function Circle(x, y, dx , dy, radius, data){
         if(this.y + this.radius > innerHeight || this.y < 0 ){
             this.dy = -this.dy;
         }
+
         this.x+=this.dx;
         this.y+=this.dy;
 
@@ -59,11 +64,29 @@ function Circle(x, y, dx , dy, radius, data){
 
 }
 
+
 //let circle = new Circle(200, 300, 3, -3,30);
 //circle.update();
+/**
+ *
+ * @returns {number} distance of objects
+ */
+function getDistance(x1,y1,x2,y2){
+    const xDistance = x1 - x2;
+    const yDistance = y1 - y2;
+    return Math.sqrt(Math.pow(xDistance,2)+ Math.pow(yDistance,2));
 
-const circles = new Map();
-const bitcoinMempool = new Map();
+}
+
+//Shows user hash of the circle
+canvas.addEventListener('click', () =>{
+    for (const [, circle] of circles) {
+        if(getDistance(mouse.x,mouse.y,circle.x,circle.y) < circle.radius){
+            //TODO change to non modal window
+            alert(circle.data.hash);
+        }
+    }
+})
 
 function generateCircle(transaction){
     let radius = transaction.weight / 100;
@@ -100,6 +123,6 @@ function getBitcoinMempool(){
 
 }
 
-setInterval(getBitcoinMempool,500);
+setInterval(getBitcoinMempool,200);
 init();
 animate();
