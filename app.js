@@ -2,11 +2,16 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 require('dotenv').config();
+const Client = require('bitcoin-core');
 
 
-//Asi nepotřebuju, ale radši zatím nemažu
-//const fileUpload = require('express-fileupload');
-//app.use(fileUpload());
+const client = new Client({
+    network: 'mainnet',
+    username: process.env.USERNAME,
+    password: process.env.PASSWORD,
+});
+
+
 
 app.set('view engine', 'html');
 app.set('views', 'views');

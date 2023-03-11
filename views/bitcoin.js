@@ -64,9 +64,39 @@ function Circle(x, y, dx , dy, radius, data){
 
 }
 
+function Block( x, y, width, height, data, onMove){
+    this.data = data;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    // There is no need for dx, because the block will only move vertically
+    this.dy = 0;
+    this.onMove = onMove;
+    this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
+    this.draw = function (){
+        c.fillStyle = this.color;
+        c.fillRect(this.x, this.y, this.width, this.height);
+    }
 
-//let circle = new Circle(200, 300, 3, -3,30);
-//circle.update();
+    this.update = function (){
+        this.dy = 0;
+
+        if(this.onMove){
+            this.dy = -1;
+        }
+
+        this.y+=this.dy;
+        this.draw();
+    }
+
+    this.setOnMove = function (onMove){
+        this.onMove = onMove;
+    }
+
+}
+
+
 /**
  *
  * @returns {number} distance of objects
@@ -114,14 +144,32 @@ function animate(){
 function getBitcoinMempool(){
     fetch("https://blockchain.info/unconfirmed-transactions?format=json"
     ).then((response) => response.json()).then((json) => {
-        //if transaction was not in our memory, then it is added
-        for(const tx of json.txs){
+        const txs = json.txs;
+        //if transaction was not in memory, then it is added
+        for(const tx of txs){
             if(!bitcoinMempool.has(tx.hash))
                 bitcoinMempool.set(tx.hash,tx);
         }
+
     });
 
 }
+
+let socket = new WebSocket("wss://ws.blockchain.info/inv");
+
+//subscribes to new blocks
+socket.addEventListener("open", (event) =>{
+    const message = {
+        "op": "blocks_sub"
+    };
+    socket.send(JSON.stringify(message));
+})
+
+//new block has been found
+socket.addEventListener("message", (event) =>{
+    const newBlock = JSON.parse(event.data);
+})
+
 
 setInterval(getBitcoinMempool,200);
 init();
