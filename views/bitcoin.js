@@ -9,6 +9,7 @@ let mouse = {
 
 const circles = new Map();
 const bitcoinMempool = new Map();
+const bitcoinBlocks = [];
 
 const colorArray = [
     '#e967fd',
@@ -120,6 +121,7 @@ canvas.addEventListener('click', () =>{
 
 function generateCircle(transaction){
     let radius = transaction.weight / 100;
+    radius = radius > 100 ? 100 : radius;
     let x = Math.random()* (window.innerWidth - radius*2) + radius;
     let y = Math.random()* (window.innerHeight - radius*2) + radius;
     let dx = 2*(Math.random()-0.5);
@@ -157,20 +159,38 @@ function getBitcoinMempool(){
 
 let socket = new WebSocket("wss://ws.blockchain.info/inv");
 
-//subscribes to new blocks
-socket.addEventListener("open", (event) =>{
+//subscription for new blocks
+socket.addEventListener("open", () =>{
     const message = {
         "op": "blocks_sub"
     };
     socket.send(JSON.stringify(message));
 })
 
+//subscription for new transactions
+socket.addEventListener("open", () =>{
+    const message = {
+        "op": "unconfirmed_sub"
+    };
+    socket.send(JSON.stringify(message));
+})
+
 //new block has been found
 socket.addEventListener("message", (event) =>{
-    const newBlock = JSON.parse(event.data);
+    const message = JSON.parse(event.data);
+    if(message.op === "block"){
+        const newBlock = message.x;
+    }
+    if(message.op === "utx"){
+        bitcoinMempool.set(message.x.hash,message.x);
+        console.log("New transaction came");
+        console.log(bitcoinMempool.size);
+        console.log(circles.size);
+    }
+
 })
 
 
-setInterval(getBitcoinMempool,200);
+//setInterval(getBitcoinMempool,200);
 init();
 animate();
