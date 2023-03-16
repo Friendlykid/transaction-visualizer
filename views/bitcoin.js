@@ -12,12 +12,12 @@ const bitcoinMempool = new Map();
 const bitcoinBlocks = [];
 
 const colorArray = [
-    '#e967fd',
-    '#67fd8a',
-    '#b21717',
-    '#0d735d',
-    '#ffeb24',
-    '#e82020'];
+    '#fd0010',
+    '#ff00a6',
+    '#c800ff',
+    '#7b00ff',
+    '#2b00c4',
+    '#0131ad'];
 
 window.addEventListener('mousemove', ev => {
     mouse.x = ev.x;
@@ -40,6 +40,17 @@ function Circle(x, y, dx , dy, radius, data){
     this.dy = dy;
     this.radius = radius;
     this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
+    if(this.data.fee < 100)
+        this.color = colorArray[0];
+    if(this.data.fee <= 100 && this.data.fee >= 400)
+        this.color = colorArray[1];
+    if(this.data.fee <= 400 && this.data.fee >= 600)
+        this.color = colorArray[2];
+    if(this.data.fee <= 600 && this.data.fee >= 900)
+        this.color = colorArray[3];
+    if(this.data.fee > 900 )
+        this.color = colorArray[4];
+    //console.log(this.data.fee);
     this.draw = function (){
         c.beginPath();
         c.arc(this.x,this.y, this.radius, 0, Math.PI*2, false );
@@ -50,10 +61,10 @@ function Circle(x, y, dx , dy, radius, data){
     }
 
     this.update = function (){
-        if(this.x + this.radius > innerWidth || this.x < 0 ){
+        if(this.x + this.radius > canvas.width || this.x < 0 ){
             this.dx = -this.dx;
         }
-        if(this.y + this.radius > innerHeight || this.y < 0 ){
+        if(this.y + this.radius > canvas.height || this.y < 0 ){
             this.dy = -this.dy;
         }
 
@@ -122,8 +133,9 @@ canvas.addEventListener('click', () =>{
 function generateCircle(transaction){
     let radius = transaction.weight / 100;
     radius = radius > 100 ? 100 : radius;
-    let x = Math.random()* (window.innerWidth - radius*2) + radius;
-    let y = Math.random()* (window.innerHeight - radius*2) + radius;
+    radius = radius < 2 ? 2 : radius;
+    let x = Math.random()* (canvas.width/3 - radius*2) + radius;
+    let y = Math.random()* (canvas.height - radius*2) + radius;
     let dx = 2*(Math.random()-0.5);
     let dy = 2*(Math.random()-0.5);
     return new Circle(x,y,dx,dy,radius, transaction);
@@ -175,22 +187,37 @@ socket.addEventListener("open", () =>{
     socket.send(JSON.stringify(message));
 })
 
+//TODO: maybe needs to be rewritten
 //new block has been found
 socket.addEventListener("message", (event) =>{
     const message = JSON.parse(event.data);
-    if(message.op === "block"){
+    if (message.op === "block") {
         const newBlock = message.x;
+        //TODO lot of work remains to be done :(
     }
-    if(message.op === "utx"){
-        bitcoinMempool.set(message.x.hash,message.x);
-        console.log("New transaction came");
-        console.log(bitcoinMempool.size);
-        console.log(circles.size);
+    if (message.op === "utx") {
+        const url = `https://blockchain.info/rawtx/${message.x.hash}`;
+        fetch(url)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok for url: ${url}`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                // process the data here
+                console.log(data);
+                bitcoinMempool.set(message.x.hash,message.x);
+            })
+            .catch((error) => {
+                console.error(`There was a problem with the fetch operation for url: ${url}`, error);
+                // handle the fetch error here, if needed
+            });
     }
+});
 
-})
 
 
-//setInterval(getBitcoinMempool,200);
+
 init();
 animate();

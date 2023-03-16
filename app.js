@@ -2,15 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 require('dotenv').config();
-const Client = require('bitcoin-core');
-
-
-const client = new Client({
-    network: 'mainnet',
-    username: process.env.USERNAME,
-    password: process.env.PASSWORD,
-});
-
+const bitcoinMempool = require("./Utils/BitcoinMempool");
 
 
 app.set('view engine', 'html');
@@ -24,6 +16,10 @@ app.get("/", (req, res) =>{
     res.type('html').send(file);
 });
 
+app.get("/bitcoinMempool", (req, res) =>{
+    const data = Array.from(bitcoinMempool.values());
+    res.json(data);
+});
 
 // Request for getting files. Must be after static get requests!
 app.get("/:fileName", (req, res) =>{
