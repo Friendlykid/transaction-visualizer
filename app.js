@@ -2,7 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 require('dotenv').config();
-const bitcoinMempool = require("./Utils/BitcoinMempool");
+const btcMempool = require("./Utils/BitcoinMempool");
 
 
 app.set('view engine', 'html');
@@ -17,8 +17,23 @@ app.get("/", (req, res) =>{
 });
 
 app.get("/bitcoinMempool", (req, res) =>{
-    const data = Array.from(bitcoinMempool.values());
+    const data = Array.from(btcMempool.bitcoinMempool.values());
     res.json(data);
+});
+
+
+//returns transaction from btcMempool
+app.get('/bitcoinTransaction/:txHash', (req, res) => {
+    const txHash = req.params.txHash;
+    const txData = btcMempool.bitcoinMempool.get(txHash);
+
+    if (!txData) {
+        // if transaction not found, send 404 response
+        res.status(404).send('Transaction not found');
+    } else {
+        // if transaction found, send the transaction data
+        res.send(txData);
+    }
 });
 
 // Request for getting files. Must be after static get requests!
