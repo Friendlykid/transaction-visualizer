@@ -40,6 +40,7 @@ function Circle(x, y, dx , dy, radius, data){
     this.dy = dy;
     this.radius = radius;
     this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
+    this.fee = this.data.fee?this.data.fee:this.data[1].fee
     if(this.data.fee < 100)
         this.color = colorArray[0];
     if(this.data.fee <= 100 && this.data.fee >= 400)
@@ -50,7 +51,6 @@ function Circle(x, y, dx , dy, radius, data){
         this.color = colorArray[3];
     if(this.data.fee > 900 )
         this.color = colorArray[4];
-    //console.log(this.data.fee);
     this.draw = function (){
         c.beginPath();
         c.arc(this.x,this.y, this.radius, 0, Math.PI*2, false );
@@ -157,12 +157,28 @@ function animate(){
 }
 function getBitcoinMempool(){
     fetch("https://blockchain.info/unconfirmed-transactions?format=json"
-    ).then((response) => response.json()).then((json) => {
+    ).then((response) =>{
+        return response.json();
+    } ).then((json) => {
         const txs = json.txs;
         //if transaction was not in memory, then it is added
         for(const tx of txs){
             if(!bitcoinMempool.has(tx.hash))
                 bitcoinMempool.set(tx.hash,tx);
+        }
+
+    });
+
+    fetch("http://localhost:3000/bitcoinMempool").then((response) => response.json())
+        .then((json) => {
+        console.log(json);
+            //if transaction was not in memory, then it is added
+        for(const tx of json){
+            if(!bitcoinMempool.has(tx[0])){
+                bitcoinMempool.set(tx[0],tx[1]);
+                console.log(tx[0]);
+            }
+
         }
 
     });

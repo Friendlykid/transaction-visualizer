@@ -17,7 +17,9 @@ app.get("/", (req, res) =>{
 });
 
 app.get("/bitcoinMempool", (req, res) =>{
+    res.set('Access-Control-Allow-Origin', '*');
     const data = Array.from(btcMempool.bitcoinMempool.values());
+    //sends data as array of arrays [['hash',{tx}],[],...]
     res.json(data);
 });
 
@@ -26,7 +28,8 @@ app.get("/bitcoinMempool", (req, res) =>{
 app.get('/bitcoinTransaction/:txHash', (req, res) => {
     const txHash = req.params.txHash;
     const txData = btcMempool.bitcoinMempool.get(txHash);
-
+    //Don't know if this will work
+    //res.set('Access-Control-Allow-Origin', '*');
     if (!txData) {
         // if transaction not found, send 404 response
         res.status(404).send('Transaction not found');
