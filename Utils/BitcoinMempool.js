@@ -38,7 +38,7 @@ function getSenderAddresses(transactions) {
         }
         for (let i = 0; i < arrayOfTxs.length;i++) {
             if(addresses[i] !== undefined){
-                arrayOfTxs[i][1].sender = response[i];
+                arrayOfTxs[i][1].sender = addresses[i];
             }
         }
         let n = 0;
@@ -59,7 +59,7 @@ function getSenderAddresses(transactions) {
  * It's without sender address!
  * @param rawTransaction transaction from getRawTransaction(txid, 1)
  * @param rawMempoolTransaction transaction from getMempoolEntry(txid)
- * @returns {{hash: string, vsize: string, size: string, fee: string, weight: string, vin: *[],  vout: *[]}}
+ * @returns {{vsize, size, fee: number, weight, vin: *[], hash: (*|any), vout: *[]}}
  */
 function modifyTransactionData(rawTransaction, rawMempoolTransaction){
     let vin = [];
@@ -88,7 +88,7 @@ function modifyTransactionData(rawTransaction, rawMempoolTransaction){
         "size": rawTransaction.size,
         "vsize": rawTransaction.vsize,
         "weight": rawTransaction.weight,
-        "fee": rawMempoolTransaction.fees.base,
+        "fee": rawMempoolTransaction.fees.base* Math.pow(10,8),
         "vin": vin,
         "vout": vout
     }

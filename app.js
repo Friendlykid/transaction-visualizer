@@ -2,7 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 require('dotenv').config();
-const btcMempool = require("./Utils/BitcoinMempool");
+const btcMempool = require("./Utils/BitcoinMempool").bitcoinMempool;
 
 
 app.set('view engine', 'html');
@@ -18,7 +18,7 @@ app.get("/", (req, res) =>{
 
 app.get("/bitcoinMempool", (req, res) =>{
     res.set('Access-Control-Allow-Origin', '*');
-    const data = Array.from(btcMempool.bitcoinMempool.values());
+    const data = Array.from(btcMempool.values());
     //sends data as array of arrays [['hash',{tx}],[],...]
     res.json(data);
 });

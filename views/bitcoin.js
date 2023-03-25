@@ -41,15 +41,15 @@ function Circle(x, y, dx , dy, radius, data){
     this.radius = radius;
     this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
     this.fee = this.data.fee?this.data.fee:this.data[1].fee
-    if(this.data.fee < 100)
+    if(this.fee < 100)
         this.color = colorArray[0];
-    if(this.data.fee <= 100 && this.data.fee >= 400)
+    if(this.fee <= 100 && this.fee >= 400)
         this.color = colorArray[1];
-    if(this.data.fee <= 400 && this.data.fee >= 600)
+    if(this.fee <= 400 && this.fee >= 600)
         this.color = colorArray[2];
-    if(this.data.fee <= 600 && this.data.fee >= 900)
+    if(this.fee <= 600 && this.fee >= 900)
         this.color = colorArray[3];
-    if(this.data.fee > 900 )
+    if(this.fee > 900 )
         this.color = colorArray[4];
     this.draw = function (){
         c.beginPath();
@@ -173,14 +173,7 @@ function getBitcoinMempool(){
         .then((json) => {
         console.log(json);
             //if transaction was not in memory, then it is added
-        for(const tx of json){
-            if(!bitcoinMempool.has(tx[0])){
-                bitcoinMempool.set(tx[0],tx[1]);
-                console.log(tx[0]);
-            }
-
-        }
-
+            json.forEach( tx => bitcoinMempool.set(tx.hash,tx));
     });
 
 }
@@ -222,7 +215,7 @@ socket.addEventListener("message", (event) =>{
             })
             .then((data) => {
                 // process the data here
-                console.log(data);
+                //console.log(data);
                 bitcoinMempool.set(message.x.hash,message.x);
             })
             .catch((error) => {
