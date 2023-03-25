@@ -8,54 +8,10 @@ const client = new Client({
 
 let bitcoinMempool = new Map();
 
-let counter = 0;
-
-async function GetTransactionSenderAddress(txId) {
-    const rawTransaction = await client.getRawTransaction(txId, 0);
-    const decodedRawTransaction = await client.decodeRawTransaction(rawTransaction);
-    const transactionInputs = decodedRawTransaction.vin;
-    const rawTransaction2 = await client.getRawTransaction(transactionInputs[0].txid, 1);
-    const rawTransactionHex = rawTransaction2.hex;
-    const inputDecodedRawTransaction = await  client.decodeRawTransaction(rawTransactionHex);
-    const vouts = inputDecodedRawTransaction.vout;
-    return vouts[0].scriptPubKey.address;
-}
-
 /**
- * Modifies data from transaction, adds a fee and removes unnecessary information
- * @param json raw transaction data
- * @returns {Promise<{vsize, size, locktime, fee: string, txid: *, weight, vin: *[], hash, vout: *[]}>}
+ * Fills out transactions with adress of sender and saves it to bitcoinMempool.
+ * @param transactions map of rawTransactions
  */
-async function createDataFromRawTransaction(json) {
-    let vin = [];
-    let vout = [];
-    json.vout.forEach(a => {
-        vout.push({
-            "value": a.value,
-            "n": a.n,
-            "address": a.scriptPubKey.address
-        });
-    });
-    json.vin.forEach(a => {
-        vin.push({
-            "txid": a.txid
-        });
-    });
-    const tx = await client.getMempoolEntry(json.txid);
-    const fee = tx.fees.base;
-    return {
-        "txid": json.txid,
-        "hash": json.hash,
-        "size": json.size,
-        "vsize": json.vsize,
-        "weight": json.weight,
-        "fee": fee,
-        "locktime": json.locktime,
-        "vin": vin,
-        "vout": vout
-    }
-}
-
 function getSenderAddresses(transactions) {
     let batch = [];
     //transactions are a Map() and we need to convert it to an array, so we have the same order afterwards
@@ -90,11 +46,21 @@ function getSenderAddresses(transactions) {
             if(a !== undefined)
                 n++;
         })
-        bitcoinMempool = new Map([...arrayOfTxs]);
-        console.log(bitcoinMempool.size," transactions in memory");
+        for (const [hash,tx] of arrayOfTxs) {
+            bitcoinMempool.set(hash,tx);
+        }
+        console.log(bitcoinMempool.size," transactions in memory. ", n, " transaction sender address was found.");
     })
 
 }
+
+/**
+ * Merges two transaction formats together and get rid of unnecessary information.
+ * It's without sender address!
+ * @param rawTransaction transaction from getRawTransaction(txid, 1)
+ * @param rawMempoolTransaction transaction from getMempoolEntry(txid)
+ * @returns {{hash: string, vsize: string, size: string, fee: string, weight: string, vin: *[],  vout: *[]}}
+ */
 function modifyTransactionData(rawTransaction, rawMempoolTransaction){
     let vin = [];
     let vout = [];
@@ -128,6 +94,53 @@ function modifyTransactionData(rawTransaction, rawMempoolTransaction){
     }
 }
 
+/**
+ * Check whether RPC node returned valid response.
+ * @param tx
+ * @returns {boolean}
+ */
+function isTransactionValid(tx){
+    return !tx?.stack;
+}
+
+/**
+ * periodical update of btc mempool
+ */
+function updateMempool(){
+
+    setInterval( async () => {
+        let batchMempoolEntry = [];
+        let batchRawTransaction = [];
+        const hashes = await client.getRawMempool();
+        for (const [txid,] of bitcoinMempool.entries()) {
+            // If the transaction is not in the mempool, delete it from the Map
+            if (!hashes.includes(txid)) {
+                bitcoinMempool.delete(txid);
+            }
+        }
+        for (const txid of hashes) {
+            if(!bitcoinMempool.has(txid)){
+                batchMempoolEntry.push({method: 'getmempoolentry', parameters: {txid}});
+                batchRawTransaction.push({method: 'getrawtransaction', parameters: [txid, 1]});
+            }
+        }
+        const mempoolEntries = await client.command(batchMempoolEntry);
+        const rawTransactions = await client.command(batchRawTransaction);
+
+        if(mempoolEntries.length > 0)
+            console.log("Adding ", mempoolEntries.length," transactions to mempool");
+        let transactions = new Map();
+
+        for(let i = 0; i < mempoolEntries.length;i++){
+            if(isTransactionValid(mempoolEntries[i]) && isTransactionValid(rawTransactions[i])){
+                const transaction = modifyTransactionData(rawTransactions[i],mempoolEntries[i]);
+                transactions.set(transaction.hash,transaction);
+            }
+        }
+        getSenderAddresses(transactions);
+    },1000);
+}
+
 //On server start
 client.getRawMempool(true).then(response =>{
     let batch = [];
@@ -136,45 +149,21 @@ client.getRawMempool(true).then(response =>{
     for (const txid in response) {
         tmpTxMap.set(txid, response[txid]);
         batch.push({method: 'getrawtransaction', parameters:[txid, 1]});
-        //getDataFromRawMempoolTransaction(txid,response[txid]).then( a => console.log(a));
     }
     client.command(batch).then(response2 => {
         for (const rawTx of response2) {
-            //check for bad response from bitcoin node
-            const txOk = !rawTx?.stack;
-            if(txOk){
+            if(isTransactionValid(rawTx)){
                 tmpTxMap.set(rawTx.txid, modifyTransactionData(rawTx, response[rawTx.txid]));
             }
         }
         getSenderAddresses(tmpTxMap);
+        setTimeout(updateMempool,5000);
     })
 
 })
 
 
-setInterval( () => {
-    client.getMemoryPoolContent().then(response => {
-        //console.log(response);
-        for (const [hash, ] of bitcoinMempool.entries()) {
-            if (!response[hash]) {
-                bitcoinMempool.delete(hash);
-            }
-        }
 
-        //Adds all transactions to bitcoinMempool
-
-        Object.entries(response).forEach( a => {
-            console.log(a[0]);
-            GetTransactionSenderAddress(a[0]).then()
-            bitcoinMempool.set(a[0],a)});
-        //Writes to console once every 10s number of txs in bitcoinMempool
-        if(counter % 10 ===0){
-            console.log("Storing "+bitcoinMempool.size + " transactions");
-        }
-        counter++;
-
-    })
-},1000);
 
 
 
