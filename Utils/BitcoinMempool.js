@@ -142,29 +142,46 @@ function updateMempool(){
 }
 
 //On server start
-client.getRawMempool(true).then(response =>{
-    let batch = [];
-    //without adresses
+client.getRawMempool(true).then(response => {
+    const batchSize = 500; // The maximum number of requests in each batch
+    let txids = Object.keys(response);
+    let i = 0;
+    let batch;
     const tmpTxMap = new Map();
-    for (const txid in response) {
-        tmpTxMap.set(txid, response[txid]);
-        batch.push({method: 'getrawtransaction', parameters:[txid, 1]});
-    }
-    client.command(batch).then(response2 => {
-        for (const rawTx of response2) {
-            if(isTransactionValid(rawTx)){
-                tmpTxMap.set(rawTx.txid, modifyTransactionData(rawTx, response[rawTx.txid]));
+
+    const processBatch = (batch) => {
+        client.command(batch).then(response2 => {
+            for (const rawTx of response2) {
+                if(isTransactionValid(rawTx)){
+                    tmpTxMap.set(rawTx.txid, modifyTransactionData(rawTx, response[rawTx.txid]));
+                }
             }
+            getSenderAddresses(tmpTxMap);
+        });
+    };
+
+    const processNextBatch = () => {
+        if (i >= txids.length) {
+            // All transactions have been processed
+            setTimeout(updateMempool,5000);
+            return;
         }
-        getSenderAddresses(tmpTxMap);
-        setTimeout(updateMempool,5000);
-    })
 
-})
+        batch = [];
+        const batchEnd = Math.min(i + batchSize, txids.length);
+        for (; i < batchEnd; i++) {
+            const txid = txids[i];
+            tmpTxMap.set(txid, response[txid]);
+            batch.push({method: 'getrawtransaction', parameters:[txid, 1]});
+        }
 
+        console.log(`Processing batch ${i / batchSize + 1} of ${Math.ceil(txids.length / batchSize)}`);
+        processBatch(batch);
+        setTimeout(processNextBatch, 2000); // Wait for a second between batches
+    };
 
-
-
+    processNextBatch();
+});
 
 
 
