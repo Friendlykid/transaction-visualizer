@@ -168,17 +168,36 @@ function getBitcoinMempool(){
         }
 
     });
-
+    /*
     fetch("http://localhost:3000/bitcoinMempool").then((response) => response.json())
         .then((json) => {
         console.log(json);
             //if transaction was not in memory, then it is added
             json.forEach( tx => bitcoinMempool.set(tx.hash,tx));
     });
-
+     */
 }
 
-let socket = new WebSocket("wss://ws.blockchain.info/inv");
+const ws = new WebSocket('ws://localhost:8080');
+ws.addEventListener('open', () => {
+    console.log('Connected to server');
+});
+
+ws.addEventListener('message', (event) => {
+    const message = JSON.parse(event.data);
+
+    console.log(`Received message: ${event.data}`);
+});
+
+ws.addEventListener('close', () => {
+    console.log('Disconnected from server');
+});
+
+ws.addEventListener('error', (error) => {
+    console.error(`WebSocket error: ${error}`);
+});
+
+const socket = new WebSocket("wss://ws.blockchain.info/inv");
 
 //subscription for new blocks
 socket.addEventListener("open", () =>{
@@ -188,13 +207,6 @@ socket.addEventListener("open", () =>{
     socket.send(JSON.stringify(message));
 })
 
-//subscription for new transactions
-socket.addEventListener("open", () =>{
-    const message = {
-        "op": "unconfirmed_sub"
-    };
-    socket.send(JSON.stringify(message));
-})
 
 //TODO: maybe needs to be rewritten
 //new block has been found
@@ -203,25 +215,6 @@ socket.addEventListener("message", (event) =>{
     if (message.op === "block") {
         const newBlock = message.x;
         //TODO lot of work remains to be done :(
-    }
-    if (message.op === "utx") {
-        const url = `https://blockchain.info/rawtx/${message.x.hash}`;
-        fetch(url)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok for url: ${url}`);
-                }
-                return response.json();
-            })
-            .then((data) => {
-                // process the data here
-                //console.log(data);
-                bitcoinMempool.set(message.x.hash,message.x);
-            })
-            .catch((error) => {
-                console.error(`There was a problem with the fetch operation for url: ${url}`, error);
-                // handle the fetch error here, if needed
-            });
     }
 });
 

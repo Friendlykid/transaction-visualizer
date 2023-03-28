@@ -21,22 +21,20 @@ app.get("/bitcoinMempool", (req, res) =>{
     res.json(data);
 });
 
-
-//returns transaction from btcMempool
-app.get('/bitcoinTransaction/:txHash', (req, res) => {
-    const txHash = req.params.txHash;
-    const txData = btcMempool.bitcoinMempool.get(txHash);
-    //Don't know if this will work
-    //res.set('Access-Control-Allow-Origin', '*');
-    if (!txData) {
-        // if transaction not found, send 404 response
-        res.status(404).send('Transaction not found');
-    } else {
-        // if transaction found, send the transaction data
-        res.send(txData);
+//Request for files inside a folder. Must be after static get requests!
+app.get("/:folder/:fileName", (req, res) =>{
+    const fileName = req.params.fileName;
+    const fileType = fileName.split('.')[1];
+    const folder = req.params.folder;
+    try{
+        let file = fs.readFileSync(`views/${folder}/${fileName}`, 'utf-8');
+        res.type(fileType).send(file);
+    } catch (e){
+        res.type('error').send(e);
+        console.log(e);
     }
-});
 
+});
 // Request for getting files. Must be after static get requests!
 app.get("/:fileName", (req, res) =>{
     const fileName = req.params.fileName;
