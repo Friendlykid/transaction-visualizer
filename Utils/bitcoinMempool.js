@@ -1,5 +1,6 @@
 const Client = require('bitcoin-core');
-
+const wss = require('./websocket').wss;
+const WebSocket = require('./websocket').WebSocket;
 const client = new Client({
     network: 'mainnet',
     username: process.env.BITCOINUSERNAME,
@@ -12,45 +13,44 @@ let bitcoinMempool = new Map();
  * Fills out transactions with adress of sender and saves it to bitcoinMempool.
  * @param transactions map of rawTransactions
  */
-function getSenderAddresses(transactions) {
+async function getSenderAddresses(transactions) {
     let batch = [];
     //transactions are a Map() and we need to convert it to an array, so we have the same order afterwards
     const arrayOfTxs = Array.from(transactions.entries());
 
-    for (const [,tx] of arrayOfTxs) {
+    for (const [, tx] of arrayOfTxs) {
         const transactionInputs = tx.vin;
         try {
-            batch.push({method: 'getrawtransaction', parameters:[transactionInputs[0].txid, 1]});
-        }catch (e) {
-            batch.push({method: 'getrawtransaction', parameters:[tx.depends[0], 1]});
+            batch.push({method: 'getrawtransaction', parameters: [transactionInputs[0].txid, 1]});
+        } catch (e) {
+            batch.push({method: 'getrawtransaction', parameters: [tx.depends[0], 1]});
         }
 
     }
-    client.command(batch).then(response =>{
-        let addresses = []
-        for (const tx of response) {
-            const txOk = !tx?.stack;
-            if(txOk) {
-                addresses.push(tx.vout[0].scriptPubKey.address)
-            }else{
-                addresses.push(undefined);
-            }
+    const response = await client.command(batch);
+    let addresses = []
+    for (const tx of response) {
+        const txOk = !tx?.stack;
+        if (txOk) {
+            addresses.push(tx.vout[0].scriptPubKey.address)
+        } else {
+            addresses.push(undefined);
         }
-        for (let i = 0; i < arrayOfTxs.length;i++) {
-            if(addresses[i] !== undefined){
-                arrayOfTxs[i][1].sender = addresses[i];
-            }
+    }
+    for (let i = 0; i < arrayOfTxs.length; i++) {
+        if (addresses[i] !== undefined) {
+            arrayOfTxs[i][1].sender = addresses[i];
         }
-        let n = 0;
-        addresses.forEach( a => {
-            if(a !== undefined)
-                n++;
-        })
-        for (const [hash,tx] of arrayOfTxs) {
-            bitcoinMempool.set(hash,tx);
-        }
-        console.log(bitcoinMempool.size," transactions in memory. ", n, " transaction sender address was found.");
+    }
+    let n = 0;
+    addresses.forEach(a => {
+        if (a !== undefined)
+            n++;
     })
+    for (const [hash, tx] of arrayOfTxs) {
+        bitcoinMempool.set(hash, tx);
+    }
+    console.log(bitcoinMempool.size, " transactions in memory. ", n, " transaction sender address was found.");
 
 }
 
@@ -111,17 +111,35 @@ function updateMempool(){
     setInterval( async () => {
         let batchMempoolEntry = [];
         let batchRawTransaction = [];
+        let deletedTxHashes = [];
+        let insertedTxHashes = [];
         const hashes = await client.getRawMempool();
         for (const [txid,] of bitcoinMempool.entries()) {
             // If the transaction is not in the mempool, delete it from the Map
             if (!hashes.includes(txid)) {
                 bitcoinMempool.delete(txid);
+                deletedTxHashes.push(txid);
             }
         }
+        //sends hashes of deleted transactions to each client
+        if(deletedTxHashes.length > 0){
+            wss.clients.forEach(function each(client) {
+                const data = {
+                    method:'delete',
+                    txs:deletedTxHashes
+                }
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(data));
+                }
+            });
+        }
+
+
         for (const txid of hashes) {
             if(!bitcoinMempool.has(txid)){
                 batchMempoolEntry.push({method: 'getmempoolentry', parameters: {txid}});
                 batchRawTransaction.push({method: 'getrawtransaction', parameters: [txid, 1]});
+                insertedTxHashes.push(txid);
             }
         }
         const mempoolEntries = await client.command(batchMempoolEntry);
@@ -137,7 +155,24 @@ function updateMempool(){
                 transactions.set(transaction.hash,transaction);
             }
         }
-        getSenderAddresses(transactions);
+        let insertedTransactions = [];
+        getSenderAddresses(transactions).then(() =>{
+            for (const hash of insertedTxHashes) {
+                insertedTransactions.push(bitcoinMempool.get(hash));
+            }
+            //sends inserted transactions to each client
+            if(insertedTransactions.length > 0){
+                wss.clients.forEach(function each(client) {
+                    const data = {
+                        method:'insert',
+                        txs:insertedTransactions
+                    }
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify(data));
+                    }
+                });
+            }
+        });
     },1000);
 }
 
@@ -163,7 +198,7 @@ client.getRawMempool(true).then(response => {
     const processNextBatch = () => {
         if (i >= txids.length) {
             // All transactions have been processed
-            setTimeout(updateMempool,5000);
+            updateMempool();
             return;
         }
 

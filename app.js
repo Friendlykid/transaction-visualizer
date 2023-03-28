@@ -2,14 +2,12 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 require('dotenv').config();
-const btcMempool = require("./Utils/BitcoinMempool").bitcoinMempool;
-
+const btcMempool = require("./Utils/bitcoinMempool").bitcoinMempool;
 
 app.set('view engine', 'html');
 app.set('views', 'views');
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-
 
 app.get("/", (req, res) =>{
     const file = fs.readFileSync('views/index.html', 'utf-8');
@@ -52,8 +50,6 @@ app.get("/:fileName", (req, res) =>{
     }
 
 });
-
-
 
 app.listen(3000, ()=>{
     console.log('Server started on port 3000');
