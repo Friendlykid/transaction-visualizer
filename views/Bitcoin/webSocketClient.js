@@ -46,7 +46,7 @@ socket.addEventListener("open", () =>{
 socket.addEventListener("message", (event) =>{
     const message = JSON.parse(event.data);
     if (message.op === "block") {
-        const newBlock = message.x;
+        //const newBlock = message.x;
         //TODO lot of work remains to be done :(
     }
 });
