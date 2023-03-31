@@ -6,12 +6,15 @@ const client = new Client({
     username: process.env.BITCOINUSERNAME,
     password: process.env.BITCOINPASSWORD,
 });
-
+/**
+ * Map Object containing all mempool transactions. Key value is tx hash.
+ * @type {Map<string, Object>}
+ */
 let bitcoinMempool = new Map();
 
 /**
  * Fills out transactions with adress of sender and saves it to bitcoinMempool.
- * @param transactions map of rawTransactions
+ * @param transactions Map() Object of rawTransactions
  */
 async function getSenderAddresses(transactions) {
     let batch = [];
