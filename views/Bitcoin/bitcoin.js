@@ -1,3 +1,4 @@
+import {bitcoinMempool,bitcoinBlocks} from "./webSocketClient.js";
 let canvas = document.getElementById('canvas');
 const c = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -8,8 +9,6 @@ let mouse = {
 };
 
 const circles = new Map();
-const bitcoinMempool = new Map();
-const bitcoinBlocks = [];
 
 const colorArray = [
     '#fd0010',
@@ -141,10 +140,11 @@ function generateCircle(transaction){
     return new Circle(x,y,dx,dy,radius, transaction);
 }
 function init(){
-    getBitcoinMempool();
-    for (const [, value] of bitcoinMempool){
-        circles.set(value.hash,generateCircle(value));
-    }
+    getBitcoinMempool().then(() =>{
+        for (const [, value] of bitcoinMempool){
+            circles.set(value.hash,generateCircle(value));
+        }
+    });
 }
 function animate(){
     requestAnimationFrame(animate);
@@ -155,68 +155,19 @@ function animate(){
         circles.get(key).update();
     }
 }
-function getBitcoinMempool(){
-    fetch("https://blockchain.info/unconfirmed-transactions?format=json"
-    ).then((response) =>{
-        return response.json();
-    } ).then((json) => {
-        const txs = json.txs;
-        //if transaction was not in memory, then it is added
-        for(const tx of txs){
-            if(!bitcoinMempool.has(tx.hash))
-                bitcoinMempool.set(tx.hash,tx);
-        }
-
-    });
-    /*
-    fetch("http://localhost:3000/bitcoinMempool").then((response) => response.json())
-        .then((json) => {
-        console.log(json);
-            //if transaction was not in memory, then it is added
-            json.forEach( tx => bitcoinMempool.set(tx.hash,tx));
-    });
-     */
-}
-
-const ws = new WebSocket('ws://localhost:8080');
-ws.addEventListener('open', () => {
-    console.log('Connected to server');
-});
-
-ws.addEventListener('message', (event) => {
-    const message = JSON.parse(event.data);
-
-    console.log(`Received message: ${event.data}`);
-});
-
-ws.addEventListener('close', () => {
-    console.log('Disconnected from server');
-});
-
-ws.addEventListener('error', (error) => {
-    console.error(`WebSocket error: ${error}`);
-});
-
-const socket = new WebSocket("wss://ws.blockchain.info/inv");
-
-//subscription for new blocks
-socket.addEventListener("open", () =>{
-    const message = {
-        "op": "blocks_sub"
-    };
-    socket.send(JSON.stringify(message));
-})
-
-
-//TODO: maybe needs to be rewritten
-//new block has been found
-socket.addEventListener("message", (event) =>{
-    const message = JSON.parse(event.data);
-    if (message.op === "block") {
-        const newBlock = message.x;
-        //TODO lot of work remains to be done :(
+async function getBitcoinMempool() {
+        const response = await fetch("http://localhost:3000/bitcoinMempool");
+    const txs = await response.json();
+    txs.forEach(tx => bitcoinMempool.set(tx.hash, tx));
+    const response2 = await fetch("https://blockchain.info/unconfirmed-transactions?format=json");
+    const json2 = await response2.json();
+    const txs2 = json2.txs;
+    //if transaction was not in memory, then it is added
+    for (const tx of txs2) {
+        if (!bitcoinMempool.has(tx.hash))
+            bitcoinMempool.set(tx.hash, tx);
     }
-});
+}
 
 
 

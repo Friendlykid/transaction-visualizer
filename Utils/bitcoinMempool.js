@@ -1,5 +1,6 @@
 const Client = require('bitcoin-core');
 const wss = require('./websocket').wss;
+const sendTransactions = require('./websocket').sendTransactions;
 const WebSocket = require('./websocket').WebSocket;
 const client = new Client({
     network: 'mainnet',
@@ -125,18 +126,7 @@ function updateMempool(){
             }
         }
         //sends hashes of deleted transactions to each client
-        if(deletedTxHashes.length > 0){
-            wss.clients.forEach(function each(client) {
-                const data = {
-                    method:'delete',
-                    txs:deletedTxHashes
-                }
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify(data));
-                }
-            });
-        }
-
+        sendTransactions('delete', deletedTxHashes);
 
         for (const txid of hashes) {
             if(!bitcoinMempool.has(txid)){
@@ -164,17 +154,7 @@ function updateMempool(){
                 insertedTransactions.push(bitcoinMempool.get(hash));
             }
             //sends inserted transactions to each client
-            if(insertedTransactions.length > 0){
-                wss.clients.forEach(function each(client) {
-                    const data = {
-                        method:'insert',
-                        txs:insertedTransactions
-                    }
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify(data));
-                    }
-                });
-            }
+            sendTransactions('insert', insertedTransactions);
         });
     },1000);
 }
