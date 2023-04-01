@@ -1,9 +1,8 @@
 export const bitcoinMempool = new Map();
 export const bitcoinBlocks = [];
 
-/**
- * Block size has a limit of 4 million weight units.
- */
+
+// Block size has a limit of 4 million weight units.
 const blockSize = 4_000_000;
 
 const ws = new WebSocket('ws://localhost:8080');

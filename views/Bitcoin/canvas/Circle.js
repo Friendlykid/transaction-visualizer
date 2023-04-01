@@ -10,13 +10,16 @@ const colorArray = [
 ];
 
 export default class Circle{
-    constructor(x, y, dx , dy, radius, transaction){
+    constructor(transaction){
+
+        this.radius = transaction.weight / 100;
+        this.radius = this.radius > 100 ? 100 : this.radius;
+        this.radius = this.radius < 2 ? 2 : this.radius;
+        this.x = Math.random()* (canvas.width/3 - this.radius*2) + this.radius;
+        this.y = Math.random()* (canvas.height - this.radius*2) + this.radius;
+        this.dx = 2*(Math.random()-0.5);
+        this.dy = 2*(Math.random()-0.5);
         this.transaction = transaction;
-        this.x = x;
-        this.y = y;
-        this.dx = dx;
-        this.dy = dy;
-        this.radius = radius;
         this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
         this.fee = this.transaction.fee?this.transaction.fee:this.transaction[1].fee
         if(this.fee < 100)

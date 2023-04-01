@@ -33,11 +33,6 @@ window.addEventListener('resize', () =>{
 });
 
 
-
-
-
-
-
 /**
  * @returns {number} distance of objects
  */
@@ -58,34 +53,8 @@ canvas.addEventListener('click', () =>{
     }
 })
 
-function generateCircle(transaction){
-    let radius = transaction.weight / 100;
-    radius = radius > 100 ? 100 : radius;
-    radius = radius < 2 ? 2 : radius;
-    let x = Math.random()* (canvas.width/3 - radius*2) + radius;
-    let y = Math.random()* (canvas.height - radius*2) + radius;
-    let dx = 2*(Math.random()-0.5);
-    let dy = 2*(Math.random()-0.5);
-    return new Circle(x,y,dx,dy,radius, transaction);
-}
-function init(){
-    getBitcoinMempool().then(() =>{
-        for (const [hash, value] of bitcoinMempool){
-            circles.set(hash,generateCircle(value));
-        }
-    });
-}
-function animate(){
-    requestAnimationFrame(animate);
-    c.clearRect(0,0, innerWidth,innerHeight);
-    for( const [key, transaction] of bitcoinMempool){
-        if(!circles.has(key))
-            circles.set(key,generateCircle(transaction));
-        circles.get(key).update();
-    }
-}
 async function getBitcoinMempool() {
-        const response = await fetch("http://localhost:3000/bitcoinMempool");
+    const response = await fetch("http://localhost:3000/bitcoinMempool");
     const txs = await response.json();
     txs.forEach(tx => bitcoinMempool.set(tx.hash, tx));
     const response2 = await fetch("https://blockchain.info/unconfirmed-transactions?format=json");
@@ -98,7 +67,22 @@ async function getBitcoinMempool() {
     }
 }
 
-
+function init(){
+    getBitcoinMempool().then(() =>{
+        for (const [hash, value] of bitcoinMempool){
+            circles.set(hash,new Circle(value));
+        }
+    });
+}
+function animate(){
+    requestAnimationFrame(animate);
+    c.clearRect(0,0, innerWidth,innerHeight);
+    for( const [key, transaction] of bitcoinMempool){
+        if(!circles.has(key))
+            circles.set(key,new Circle(transaction));
+        circles.get(key).update();
+    }
+}
 
 
 init();

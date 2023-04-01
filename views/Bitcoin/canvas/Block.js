@@ -1,8 +1,8 @@
 import { c } from "../bitcoin.js";
 
 export class Block {
-    constructor(x, y, width, height, data, onMove) {
-        this.data = data;
+    constructor(x, y, width, height, transactions, onMove) {
+        this.transactions = transactions;
         this.x = x;
         this.y = y;
         this.width = width;
