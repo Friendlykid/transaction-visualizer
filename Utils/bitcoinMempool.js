@@ -1,7 +1,5 @@
 const Client = require('bitcoin-core');
-const wss = require('./websocket').wss;
 const sendTransactions = require('./websocket').sendTransactions;
-const WebSocket = require('./websocket').WebSocket;
 const client = new Client({
     network: 'mainnet',
     username: process.env.BITCOINUSERNAME,
@@ -174,7 +172,9 @@ client.getRawMempool(true).then(response => {
                     tmpTxMap.set(rawTx.txid, modifyTransactionData(rawTx, response[rawTx.txid]));
                 }
             }
-            getSenderAddresses(tmpTxMap);
+            getSenderAddresses(tmpTxMap).catch(er =>{
+                console.log(er);
+            });
         });
     };
 

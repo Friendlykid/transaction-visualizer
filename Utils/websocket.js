@@ -1,11 +1,18 @@
 const WebSocket = require('ws').WebSocket;
 const wss = new WebSocket.WebSocketServer({ port: 8080 });
+const bitcoinMempool = require('./bitcoinMempool.js').bitcoinMempool;
 
+// When connecting to server it sends content of bitcoinMempool
 wss.on('connection', (ws) => {
     console.log('Client connected');
-    const message = {
-        method:"Connected to server"
+    let transactions = [];
+    if (bitcoinMempool) {
+        transactions = Array.from(bitcoinMempool.values());
     }
+    const message = {
+        method: 'connected',
+        txs: transactions,
+    };
     ws.send(JSON.stringify(message));
     ws.on('error', console.error);
 
