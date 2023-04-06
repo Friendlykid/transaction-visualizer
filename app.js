@@ -17,7 +17,7 @@ app.get("/", (req, res) =>{
 app.get("/bitcoinMempool", (req, res) =>{
     res.set('Access-Control-Allow-Origin', '*');
     const data = Array.from(btcMempool.values());
-    //sends data as array of arrays [['hash',{tx}],[],...]
+    //sends data as array of arrays [{tx1},{tx2},...]
     res.json(data);
 });
 

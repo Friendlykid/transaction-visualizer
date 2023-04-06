@@ -21,16 +21,21 @@ export default class Circle{
         this.dy = 2*(Math.random()-0.5);
         this.transaction = transaction;
         this.color = colorArray[Math.floor(Math.random()*colorArray.length)];
-        this.fee = this.transaction.fee?this.transaction.fee:this.transaction[1].fee
-        if(this.fee < 100)
+        this.value = 0;
+        try{
+            transaction.vout.forEach(vout => this.value += vout.value);
+        }catch{
+            console.log(transaction);
+        }
+        if(this.value < 0.001)
             this.color = colorArray[0];
-        if(this.fee <= 100 && this.fee >= 400)
+        if(this.value >= 0.01 && this.transaction.fee <= 0.05)
             this.color = colorArray[1];
-        if(this.fee <= 400 && this.fee >= 600)
+        if(this.value >= 0.05 && this.value <= 0.1)
             this.color = colorArray[2];
-        if(this.fee <= 600 && this.fee >= 900)
+        if(this.value >= 0.1 && this.value <= 1)
             this.color = colorArray[3];
-        if(this.fee > 900 )
+        if(this.value > 1 )
             this.color = colorArray[4];
     }
 

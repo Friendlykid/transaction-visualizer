@@ -91,6 +91,8 @@ function modifyTransactionData(rawTransaction, rawMempoolTransaction){
         "vsize": rawTransaction.vsize,
         "weight": rawTransaction.weight,
         "fee": rawMempoolTransaction.fees.base* Math.pow(10,8),
+        //priority is fee per weight. Bigger the priority the bigger chance of confirmation.
+        "priority": rawMempoolTransaction.fees.base* Math.pow(10,8)/rawTransaction.weight,
         "vin": vin,
         "vout": vout
     }

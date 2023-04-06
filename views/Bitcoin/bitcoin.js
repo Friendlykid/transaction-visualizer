@@ -11,15 +11,6 @@ const mouse = {
 
 const circles = new Map();
 
-const colorArray = [
-    '#B9D8C2',
-    '#9AC2C9',
-    '#8AA1B1',
-    '#4A5043',
-    '#FFCB47',
-    '#ff622c'
-];
-
 
 window.addEventListener('mousemove', ev => {
     mouse.x = ev.x;
