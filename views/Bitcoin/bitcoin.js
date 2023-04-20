@@ -9,7 +9,7 @@ const mouse = {
     y: undefined
 };
 
-const circles = new Map();
+export const circles = new Map();
 
 
 window.addEventListener('mousemove', ev => {

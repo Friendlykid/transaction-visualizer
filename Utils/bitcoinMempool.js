@@ -117,7 +117,15 @@ function updateMempool(){
         let batchRawTransaction = [];
         let deletedTxHashes = [];
         let insertedTxHashes = [];
-        const hashes = await client.getRawMempool();
+        let hashes;
+        try{
+            hashes = await client.getRawMempool();
+        }catch{
+            setTimeout(async () => {
+                hashes = await client.getRawMempool();
+            }, 1000)
+        }
+
         for (const [txid,] of bitcoinMempool.entries()) {
             // If the transaction is not in the mempool, delete it from the Map
             if (!hashes.includes(txid)) {
