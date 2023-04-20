@@ -1,4 +1,4 @@
-import {bitcoinMempool,bitcoinBlocks} from "./webSocketClient.js";
+import {bitcoinMempool} from "./webSocketClient.js";
 import Circle from "./canvas/Circle.js";
 export const canvas = document.getElementById('canvas');
 export const c = canvas.getContext('2d');
